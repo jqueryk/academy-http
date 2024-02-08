@@ -7,6 +7,10 @@ while connection = server.accept
   method, full_path = request.split(' ')
   path = full_path.split('?')[0]
 
+  query_string = full_path.split('?')[1] || ""
+  params = query_string.split('&').map { |param| param.split('=') }.to_h
+  puts params
+
   response = case path
              when "/"
                "Hello World"
