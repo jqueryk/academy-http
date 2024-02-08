@@ -3,6 +3,36 @@ require './calculator'
 
 server = TCPServer.open('0.0.0.0', 3000)
 
+# Выводим отдельно контроллер
+def calculator_controller(params)
+  calculator = Calculator.new(params['left'].to_i, params['right'].to_i)
+  case params['action']
+  when 'sum'
+    calculator.sum
+  when 'subtraction'
+    calculator.subtraction
+  when 'divide'
+    calculator.divide
+  when 'multiply'
+    calculator.multiply
+  when 'exponentiation'
+    calculator.exponentiation
+  end
+  "Result: #{calculator.result}"
+end
+
+# Выводим отдельно роутер
+def router(path, params)
+  case path
+  when "/"
+    "Hello World"
+  when "/calculator"
+    calculator_controller(params)
+  else
+    "404"
+  end
+end
+
 while connection = server.accept
   request = connection.gets
   method, full_path = request.split(' ')
@@ -12,34 +42,7 @@ while connection = server.accept
   params = query_string.split('&').map { |param| param.split('=') }.to_h
   puts params
 
-  response = case path
-             when "/"
-               "Hello World"
-             when "/calculator"
-               calculator = Calculator.new(params['left'].to_i, params['right'].to_i)
-
-               # bad practice, потому что в случае отсутвия параметра action вылетит ошибка
-               # calculator.method(params['action']).call
-
-               # best practice, потому что если не найлется один подходящий случай для when,
-               # то на калькуляторе ничего и не вызовется
-               case params['action']
-               when 'sum'
-                 calculator.sum
-               when 'subtraction'
-                 calculator.subtraction
-               when 'divide'
-                 calculator.divide
-               when 'multiply'
-                 calculator.multiply
-               when 'exponentiation'
-                 calculator.exponentiation
-               end
-
-               "Result: #{calculator.result}"
-             else
-               "404"
-             end
+  response = router(path, params)
 
   status = response != "404" ? 200 : 404
 
