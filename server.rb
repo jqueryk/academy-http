@@ -1,4 +1,5 @@
 require 'socket'
+require './calculator'
 
 server = TCPServer.open('0.0.0.0', 3000)
 
@@ -15,7 +16,27 @@ while connection = server.accept
              when "/"
                "Hello World"
              when "/calculator"
-               "Calculator"
+               calculator = Calculator.new(params['left'].to_i, params['right'].to_i)
+
+               # bad practice, потому что в случае отсутвия параметра action вылетит ошибка
+               # calculator.method(params['action']).call
+
+               # best practice, потому что если не найлется один подходящий случай для when,
+               # то на калькуляторе ничего и не вызовется
+               case params['action']
+               when 'sum'
+                 calculator.sum
+               when 'subtraction'
+                 calculator.subtraction
+               when 'divide'
+                 calculator.divide
+               when 'multiply'
+                 calculator.multiply
+               when 'exponentiation'
+                 calculator.exponentiation
+               end
+
+               "Result: #{calculator.result}"
              else
                "404"
              end

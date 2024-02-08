@@ -1,4 +1,5 @@
 class Calculator
+    attr_reader :result
     def initialize(left, right)
       @left = left
       @right = right
