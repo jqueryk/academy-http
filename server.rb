@@ -1,55 +1,36 @@
 require 'socket'
+require 'rack'
 require './calculator'
+require './app'
 
+# Запускается сервер
 server = TCPServer.open('0.0.0.0', 3000)
 
-# Выводим отдельно контроллер
-def calculator_controller(params)
-  calculator = Calculator.new(params['left'].to_i, params['right'].to_i)
-  case params['action']
-  when 'sum'
-    calculator.sum
-  when 'subtraction'
-    calculator.subtraction
-  when 'divide'
-    calculator.divide
-  when 'multiply'
-    calculator.multiply
-  when 'exponentiation'
-    calculator.exponentiation
-  end
-  "Result: #{calculator.result}"
-end
-
-# Выводим отдельно роутер
-def router(path, params)
-  case path
-  when "/"
-    "Hello World"
-  when "/calculator"
-    calculator_controller(params)
-  else
-    "404"
-  end
-end
+# Запускается приложение
+app = App.new
 
 while connection = server.accept
-  request = connection.gets
+  request = connection.gets # принимается запрос
   method, full_path = request.split(' ')
   path = full_path.split('?')[0]
 
-  query_string = full_path.split('?')[1] || ""
-  params = query_string.split('&').map { |param| param.split('=') }.to_h
-  puts params
 
-  response = router(path, params)
+  # Получает данные из запроса от приложения
+  status, headers, body = app.call({
+                                     'REQUEST_METHOD' => method,
+                                     'PATH_INFO' => path,
+                                     'QUERY_STRING' => full_path.split('?')[1]
+                                   })
 
-  status = response != "404" ? 200 : 404
-
-  connection.print "HTTP/1.1 #{status}\r\n"
-  connection.print "Content-Type: text/html\r\n"
+  # Возвращает ответ
+  connection.print("HTTP/1.1 #{status}\r\n")
+  headers.each do |key, value|
+    connection.print("#{key}: #{value}\r\n")
+  end
   connection.print "\r\n"
-  connection.print "<h1>#{response}</h1>"
+  body.each do |part|
+    connection.print("#{part}\r\n")
+  end
 
   connection.close
 end
